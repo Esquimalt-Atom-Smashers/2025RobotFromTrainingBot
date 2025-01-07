@@ -4,7 +4,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
-import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -18,7 +17,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.hardware.CANcoder;
-import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 
 public class SwerveModule {
     public String modulePosition;
@@ -38,7 +36,7 @@ public class SwerveModule {
 
     public SwerveModulePosition getPosition(){
         return new SwerveModulePosition(
-            SwerveConversions.falconToMeters(mDriveMotor.getPosition().refresh().getValue()),
+            SwerveConversions.falconToMeters(mDriveMotor.getPosition().refresh().getValue().abs(null)),
             //TODO Add a correction factor for coupling between the azimuth and drive gears. 
             // every time azimuth spins, it affects the real position of the drive wheel, and 
             //therefore affects odometry.
@@ -47,7 +45,7 @@ public class SwerveModule {
     }
 
     public Rotation2d getCanCoder(){
-        return Rotation2d.fromDegrees(angleEncoder.getAbsolutePosition().refresh().getValue());
+        return Rotation2d.fromDegrees(angleEncoder.getAbsolutePosition().refresh().getValue().abs(null));
     }
 
     public void resetToAbsolute(){//TODO find out if we need to do this since we are using the canCoder as a Remote encoder
@@ -95,15 +93,16 @@ public class SwerveModule {
     }
 
     private Rotation2d getAngle(){
-        return Rotation2d.fromRotations(BaseStatusSignal.getLatencyCompensatedValue(mAngleMotor.getPosition(), mAngleMotor.getVelocity()));
+        return getCanCoder();
     }
     private double getSpeed() {
-        return SwerveConversions.falconToMPS(mDriveMotor.getVelocity().refresh().getValue());
+        return SwerveConversions.falconToMPS(mDriveMotor.getVelocity().refresh().getValue().abs(null));
     }
 
     private void configAngleEncoder(){   
         CANcoderConfiguration swerveCanCoderConfig= new CANcoderConfiguration();
-        swerveCanCoderConfig.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
+        //swerveCanCoderConfig.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Unsigned_0To1;
+        swerveCanCoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint=1;// this should do the same thing as the old thing
         swerveCanCoderConfig.MagnetSensor.SensorDirection = SwerveConstants.INVERT_CANCODER;
 
         angleEncoder.getConfigurator().apply(swerveCanCoderConfig);
@@ -117,7 +116,6 @@ public class SwerveModule {
         CurrentLimitsConfigs angleCurrentLimits = new CurrentLimitsConfigs();
         angleCurrentLimits.SupplyCurrentLimitEnable = SwerveConstants.ENABLE_CURRENT_LIMITS_ANGLE_MOTORS;
         angleCurrentLimits.SupplyCurrentLimit = SwerveConstants.SUPPLY_CURRENT_LIMIT_ANGLE_MOTORS;
-        angleCurrentLimits.SupplyTimeThreshold = 0.0; //hardcoded to prevent activation
         angleCurrentLimits.StatorCurrentLimitEnable =SwerveConstants.ENABLE_CURRENT_LIMITS_ANGLE_MOTORS;
         angleCurrentLimits.StatorCurrentLimit=SwerveConstants.STATOR_CURRENT_LIMIT_ANGLE_MOTORS;
         
@@ -150,7 +148,6 @@ public class SwerveModule {
         CurrentLimitsConfigs driveCurrentLimits = new CurrentLimitsConfigs();
         driveCurrentLimits.SupplyCurrentLimitEnable = SwerveConstants.ENABLE_CURRENT_LIMITS_DRIVE_MOTORS;
         driveCurrentLimits.SupplyCurrentLimit = SwerveConstants.SUPPLY_CURRENT_LIMIT_DRIVE_MOTORS;
-        driveCurrentLimits.SupplyTimeThreshold = 0.0; //hardcoded to prevent activation
         driveCurrentLimits.StatorCurrentLimitEnable = SwerveConstants.ENABLE_CURRENT_LIMITS_DRIVE_MOTORS;
         driveCurrentLimits.StatorCurrentLimit=SwerveConstants.STATOR_CURRENT_LIMIT_DRIVE_MOTORS;
         TalonFXConfiguration swerveDriveFXConfig = new TalonFXConfiguration();
