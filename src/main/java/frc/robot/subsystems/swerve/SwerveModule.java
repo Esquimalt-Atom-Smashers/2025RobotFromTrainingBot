@@ -4,6 +4,9 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -36,7 +39,7 @@ public class SwerveModule {
 
     public SwerveModulePosition getPosition(){
         return new SwerveModulePosition(
-            SwerveConversions.falconToMeters(mDriveMotor.getPosition().refresh().getValue().abs(null)),
+            SwerveConversions.falconToMeters(mDriveMotor.getPosition().refresh().getValue().abs(Rotations)),
             //TODO Add a correction factor for coupling between the azimuth and drive gears. 
             // every time azimuth spins, it affects the real position of the drive wheel, and 
             //therefore affects odometry.
@@ -45,7 +48,7 @@ public class SwerveModule {
     }
 
     public Rotation2d getCanCoder(){
-        return Rotation2d.fromDegrees(angleEncoder.getAbsolutePosition().refresh().getValue().abs(null));
+        return Rotation2d.fromDegrees(angleEncoder.getAbsolutePosition().refresh().getValue().abs(Rotations));
     }
 
     public void resetToAbsolute(){//TODO find out if we need to do this since we are using the canCoder as a Remote encoder
@@ -96,7 +99,7 @@ public class SwerveModule {
         return getCanCoder();
     }
     private double getSpeed() {
-        return SwerveConversions.falconToMPS(mDriveMotor.getVelocity().refresh().getValue().abs(null));
+        return SwerveConversions.falconToMPS(mDriveMotor.getVelocity().refresh().getValue().abs(RotationsPerSecond));
     }
 
     private void configAngleEncoder(){   
